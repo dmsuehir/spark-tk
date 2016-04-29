@@ -154,6 +154,7 @@ class Frame(object):
     from sparktk.frame.ops.quantile_bin_column import quantile_bin_column
     from sparktk.frame.ops.quantiles import quantiles
     from sparktk.frame.ops.save import save
+    from sparktk.frame.ops.sort import sort
     from sparktk.frame.ops.take import take
     from sparktk.frame.ops.tally import tally
     from sparktk.frame.ops.tally_percent import tally_percent

@@ -49,6 +49,10 @@ object JConvert extends Serializable {
     hashMap
   }
 
+  def toScalaTwoTuple[T](a: T, b: T): (T, T) = {
+    (a, b)
+  }
+
   //  def frameSchemaToScala(pythonSchema: JArrayList[JArrayList[String]]): Schema = {
   //    val columns = pythonSchema.asScala.map { item =>
   //      val list = item.asScala.toList
