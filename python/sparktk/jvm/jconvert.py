@@ -48,6 +48,12 @@ class JConvert(object):
             python_list = self.list_to_double_list(python_list)
         return self.to_scala_option(python_list)
 
+    def to_scala_option_either_string_int(self, item):
+        return self.scala.toOption(self.scala.toEitherStringInt(item))
+
     def from_scala_option(self, item):
         return self.scala.fromOption(item)
+
+    def from_scala_seq(self, seq):
+        return self.scala.scalaSeqToPython(seq)
 
