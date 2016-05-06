@@ -19,6 +19,13 @@ object JConvert extends Serializable {
     }
   }
 
+  def toEitherStringInt(item: Any): Either[String, Int] = {
+    item match {
+      case s: String => Left(s)
+      case i: Int => Right(i)
+    }
+  }
+
   def fromOption(o: Option[Any]): Any = o.orNull
 
   def scalaMapStringIntToPython(m: Map[String, Int]) = {

@@ -119,16 +119,38 @@ class Frame(object):
         """
         return [name for name, data_type in self.schema]
 
+    @property
+    def row_count(self):
+        """
+        Number of rows in the current frame.
+
+        :return: The number of rows in the frame
+
+        Counts all of the rows in the frame.
+
+        Examples
+        --------
+        Get the number of rows:
+
+        <hide>
+        frame = tc.to_frame([[item] for item in range(0, 4)],[("a", int)])
+        </hide>
+
+        .. code::
+
+            >>> frame.row_count
+            4
+
+        """
+        if self._is_scala:
+            return int(self._scala.rowCount())
+        return self.rdd.count()
+
     def append_csv_file(self, file_name, schema, separator=','):
         self._scala.appendCsvFile(file_name, schema_to_scala(self._tc.sc, schema), separator)
 
     def export_to_csv(self, file_name):
         self._scala.exportToCsv(file_name)
-
-    def count(self):
-        if self._is_scala:
-            return int(self._scala.count())
-        return self.rdd.count()
 
     # Frame Operations
 
@@ -136,11 +158,13 @@ class Frame(object):
     from sparktk.frame.ops.assign_sample import assign_sample
     from sparktk.frame.ops.bin_column import bin_column
     from sparktk.frame.ops.categorical_summary import categorical_summary
+    from sparktk.frame.ops.classification_metrics import classification_metrics
     from sparktk.frame.ops.column_median import column_median
     from sparktk.frame.ops.column_mode import column_mode
     from sparktk.frame.ops.column_summary_statistics import column_summary_statistics
     from sparktk.frame.ops.correlation import correlation
     from sparktk.frame.ops.correlation_matrix import correlation_matrix
+    from sparktk.frame.ops.count import count
     from sparktk.frame.ops.covariance import covariance
     from sparktk.frame.ops.covariance_matrix import covariance_matrix
     from sparktk.frame.ops.cumulative_percent import cumulative_percent

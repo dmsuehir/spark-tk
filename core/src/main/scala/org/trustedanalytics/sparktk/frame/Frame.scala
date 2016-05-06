@@ -6,6 +6,7 @@ import org.apache.spark.sql.Row
 import org.trustedanalytics.sparktk.frame.internal.BaseFrame
 import org.trustedanalytics.sparktk.frame.internal.ops._
 import org.trustedanalytics.sparktk.frame.internal.ops.binning.{ BinColumnTransformWithResult, HistogramSummarization, QuantileBinColumnTransformWithResult }
+import org.trustedanalytics.sparktk.frame.internal.ops.classificationmetrics.ClassificationMetricsSummarization
 import org.trustedanalytics.sparktk.frame.internal.ops.cumulativedist.{ CumulativePercentTransform, CumulativeSumTransform, EcdfSummarization, TallyPercentTransform, TallyTransform }
 import org.trustedanalytics.sparktk.frame.internal.ops.sample.AssignSampleTransform
 import org.trustedanalytics.sparktk.frame.internal.ops.exportdata.ExportToCsvSummarization
@@ -22,14 +23,15 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
     with AssignSampleTransform
     with BinColumnTransformWithResult
     with CategoricalSummarySummarization
+    with ClassificationMetricsSummarization
     with ColumnMedianSummarization
     with ColumnModeSummarization
     with ColumnSummaryStatisticsSummarization
     with CorrelationMatrixSummarization
     with CorrelationSummarization
+    with CountSummarization
     with CovarianceMatrixSummarization
     with CovarianceSummarization
-    with CountSummarization
     with CumulativePercentTransform
     with CumulativeSumTransform
     with DotProductTransform
@@ -40,6 +42,7 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
     with QuantilesSummarization
     with QuantileBinColumnTransformWithResult
     with RenameColumnsTransform
+    with RowCountSummarization
     with SaveSummarization
     with SortTransform
     with TakeSummarization
