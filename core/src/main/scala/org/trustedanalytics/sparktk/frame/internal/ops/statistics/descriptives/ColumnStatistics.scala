@@ -129,6 +129,15 @@ object ColumnStatistics extends Serializable {
   }
 
   def getDataWeightPairs(dataColumnIndex: Int,
+                         weightsColumnIndexAndType: Option[(Int, DataType)],
+                         rowRDD: RDD[Row]): RDD[(Any, Double)] = {
+    weightsColumnIndexAndType match {
+      case Some((index, dataType)) => getDataWeightPairs(dataColumnIndex, Some(index), Some(dataType), rowRDD)
+      case None => getDataWeightPairs(dataColumnIndex, None, None, rowRDD)
+    }
+  }
+
+  def getDataWeightPairs(dataColumnIndex: Int,
                          weightsColumnIndexOption: Option[Int],
                          weightsTypeOption: Option[DataType],
                          rowRDD: RDD[Row]): RDD[(Any, Double)] = {
