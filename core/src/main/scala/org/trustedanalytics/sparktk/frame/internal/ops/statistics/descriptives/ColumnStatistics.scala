@@ -1,5 +1,6 @@
 package org.trustedanalytics.sparktk.frame.internal.ops.statistics.descriptives
 
+import org.trustedanalytics.sparktk.frame.Column
 import org.trustedanalytics.sparktk.frame.DataTypes.DataType
 import org.apache.spark.sql.Row
 import org.trustedanalytics.sparktk.frame.internal.ops.statistics.numericalstatistics._
@@ -126,6 +127,15 @@ object ColumnStatistics extends Serializable {
       nonPositiveWeightCount = stats.nonPositiveWeightCount,
       badRowCount = stats.badRowCount,
       goodRowCount = stats.goodRowCount)
+  }
+
+  def getDataWeightPairs(dataColumnIndex: Int,
+                         weightsColumn: Option[(Int, DataType)],
+                         rowRDD: RDD[Row]): RDD[(Any, Double)] = {
+    weightsColumn match {
+      case Some((index, dataType)) => getDataWeightPairs(dataColumnIndex, Some(index), Some(dataType), rowRDD)
+      case None => getDataWeightPairs(dataColumnIndex, None, None, rowRDD)
+    }
   }
 
   def getDataWeightPairs(dataColumnIndex: Int,

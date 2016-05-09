@@ -298,12 +298,14 @@ class FrameRdd(val frameSchema: Schema, val prev: RDD[Row])
     val otherColumnIndices = frameSchema.columnIndices(otherColumnNames)
 
     val duplicatesRemovedRdd: RDD[Row] = this.mapRows(row => otherColumnNames match {
-      case Nil => (row.values(columnNames), Nil)
+      case Nil =>
+        (row.values(columnNames), Nil)
       case _ => (row.values(columnNames), row.values(otherColumnNames.toVector))
     }).reduceByKey((x, y) => x).map {
       case (keyRow, valueRow) =>
         valueRow match {
-          case Nil => new GenericRow(keyRow.toArray)
+          case Nil =>
+            new GenericRow(keyRow.toArray)
           case _ => {
             //merge and re-order entries to match schema
             val rowArray = new Array[Any](numColumns)
