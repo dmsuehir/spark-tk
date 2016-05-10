@@ -32,8 +32,8 @@ def count(self, where):
     """
     row = Row(self.schema)
 
-    def add_columns_func(r):
+    def count_where(r):
         row._set_data(r)
         return where(row)
 
-    return self._python.rdd.filter(lambda r: add_columns_func(r)).count()
+    return self._python.rdd.filter(lambda r: count_where(r)).count()
