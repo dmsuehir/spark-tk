@@ -49,7 +49,10 @@ class JConvert(object):
         return self.to_scala_option(python_list)
 
     def to_scala_option_either_string_int(self, item):
-        return self.scala.toOption(self.scala.toEitherStringInt(item))
+        if item is not None:
+            return self.scala.toOption(self.scala.toEitherStringInt(item))
+        else:
+            return self.scala.toOption(item)
 
     def from_scala_option(self, item):
         return self.scala.fromOption(item)
