@@ -16,8 +16,53 @@
 
 package org.trustedanalytics.sparktk.frame.internal.ops.classificationmetrics
 
+import org.trustedanalytics.sparktk.frame.DataTypes
 import org.trustedanalytics.sparktk.frame.internal.rdd.{ FrameRdd, ScoreAndLabel }
 import org.apache.spark.rdd.RDD
+
+import org.apache.commons.lang.StringUtils
+import org.trustedanalytics.sparktk.frame.internal.{ FrameState, FrameSummarization, BaseFrame }
+
+trait BinaryClassificationMetricsSummarization extends BaseFrame {
+
+  def binaryClassificationMetrics(labelColumn: String,
+                                  predColumn: String,
+                                  posLabel: Any,
+                                  beta: Double = 1.0,
+                                  frequencyColumn: Option[String]): ClassificationMetricValue = {
+    execute(BinaryClassificationMetrics(labelColumn, predColumn, posLabel, beta, frequencyColumn))
+  }
+}
+
+/**
+ * Statistics of accuracy, precision, and others for a binary classification model.
+ *
+ * @param labelColumn The name of the column containing the correct label for each instance.
+ * @param predColumn The name of the column containing the predicted label for each instance.
+ * @param posLabel The value to be interpreted as a positive instance for binary classification.
+ * @param beta This is the beta value to use for :math:`F_{ \beta}` measure (default F1 measure is
+ *             computed); must be greater than zero. Default is 1.
+ * @param frequencyColumn The name of an optional column containing the frequency of observations.
+ */
+case class BinaryClassificationMetrics(labelColumn: String,
+                                       predColumn: String,
+                                       posLabel: Any,
+                                       beta: Double,
+                                       frequencyColumn: Option[String]) extends FrameSummarization[ClassificationMetricValue] {
+  require(StringUtils.isNotEmpty(labelColumn), "label column is required")
+  require(StringUtils.isNotEmpty(predColumn), "predict column is required")
+  require(beta >= 0, "invalid beta value for f measure. Should be greater than or equal to 0")
+
+  override def work(state: FrameState): ClassificationMetricValue = {
+    ClassificationMetricsFunctions.binaryClassificationMetrics(
+      state,
+      labelColumn,
+      predColumn,
+      posLabel,
+      beta,
+      frequencyColumn)
+  }
+}
 
 /**
  * Model Accuracy, Precision, Recall, FMeasure, Confusion matrix for binary-class
@@ -39,14 +84,14 @@ case class BinaryClassCounter(var truePositives: Long = 0,
   }
 }
 
-case class BinaryClassMetrics[T, S: SerializableType](labelPredictRdd: RDD[ScoreAndLabel[T]],
-                                                      positiveLabel: S,
-                                                      beta: Double = 1) extends Serializable {
+case class BinaryClassMetrics[T](labelPredictRdd: RDD[ScoreAndLabel[T]],
+                                 positiveLabel: Any,
+                                 beta: Double = 1) extends Serializable {
 
   def this(frameRdd: FrameRdd,
            labelColumn: String,
            predictColumn: String,
-           positiveLabel1: S,
+           positiveLabel1: Any,
            beta: Double = 1,
            frequencyColumn: Option[String] = None) {
 
@@ -60,18 +105,23 @@ case class BinaryClassMetrics[T, S: SerializableType](labelPredictRdd: RDD[Score
     val frequency = scoreAndLabel.frequency
     counter.count += frequency
 
-    if (label.equals(positiveLabel) && score.equals(positiveLabel)) {
+    if (ClassificationMetricsFunctions.compareValues(label, positiveLabel)
+      && ClassificationMetricsFunctions.compareValues(score, positiveLabel)) {
       counter.truePositives += frequency
     }
-    else if (!label.equals(positiveLabel) && !score.equals(positiveLabel)) {
+    else if (!ClassificationMetricsFunctions.compareValues(label, positiveLabel) &&
+      !ClassificationMetricsFunctions.compareValues(score, positiveLabel)) {
       counter.trueNegatives += frequency
     }
-    else if (!label.equals(positiveLabel) && score.equals(positiveLabel)) {
+    else if (!ClassificationMetricsFunctions.compareValues(label, positiveLabel) &&
+      ClassificationMetricsFunctions.compareValues(score, positiveLabel)) {
       counter.falsePositives += frequency
     }
-    else if (label.equals(positiveLabel) && !score.equals(positiveLabel)) {
+    else if (ClassificationMetricsFunctions.compareValues(label, positiveLabel)
+      && !ClassificationMetricsFunctions.compareValues(score, positiveLabel)) {
       counter.falseNegatives += frequency
     }
+
     counter
   }).reduce((counter1, counter2) => counter1 + counter2)
 
@@ -135,5 +185,4 @@ case class BinaryClassMetrics[T, S: SerializableType](labelPredictRdd: RDD[Score
     matrix.set("neg", "neg", trueNegatives)
     matrix
   }
-
 }

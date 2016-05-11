@@ -19,6 +19,46 @@ package org.trustedanalytics.sparktk.frame.internal.ops.classificationmetrics
 import org.trustedanalytics.sparktk.frame.internal.rdd.{ ScoreAndLabel, FrameRdd }
 import scala.reflect.ClassTag
 import org.apache.spark.rdd.RDD
+import org.apache.commons.lang.StringUtils
+import org.trustedanalytics.sparktk.frame.internal.{ FrameState, FrameSummarization, BaseFrame }
+
+trait MultiClassClassificationMetricsSummarization extends BaseFrame {
+
+  def multiClassClassificationMetrics(labelColumn: String,
+                                      predColumn: String,
+                                      beta: Double = 1.0,
+                                      frequencyColumn: Option[String]): ClassificationMetricValue = {
+    execute(MultiClassClassificationMetrics(labelColumn, predColumn, beta, frequencyColumn))
+  }
+}
+
+/**
+ * Model statistics of accuracy, precision, and others.
+ *
+ * @param labelColumn The name of the column containing the correct label for each instance.
+ * @param predColumn The name of the column containing the predicted label for each instance.
+ * @param beta This is the beta value to use for :math:`F_{ \beta}` measure (default F1 measure is
+ *             computed); must be greater than zero. Default is 1.
+ * @param frequencyColumn The name of an optional column containing the frequency of observations.
+ */
+case class MultiClassClassificationMetrics(labelColumn: String,
+                                           predColumn: String,
+                                           beta: Double,
+                                           frequencyColumn: Option[String]) extends FrameSummarization[ClassificationMetricValue] {
+  require(StringUtils.isNotEmpty(labelColumn), "label column is required")
+  require(StringUtils.isNotEmpty(predColumn), "predict column is required")
+  require(beta >= 0, "invalid beta value for f measure. Should be greater than or equal to 0")
+
+  override def work(state: FrameState): ClassificationMetricValue = {
+    ClassificationMetricsFunctions.multiclassClassificationMetrics(
+      state,
+      labelColumn,
+      predColumn,
+      beta,
+      frequencyColumn
+    )
+  }
+}
 
 /**
  * Model Accuracy, Precision, Recall, FMeasure, Confusion matrix for multi-class
@@ -47,7 +87,7 @@ class MultiClassMetrics[T: ClassTag](labelPredictRdd: RDD[ScoreAndLabel[T]],
   }).reduceByKey(_ + _).collectAsMap()
 
   lazy val truePositivesByLabel = labelPredictRdd.map(scoreAndLabel => {
-    val truePositives = if (scoreAndLabel.label.equals(scoreAndLabel.score)) {
+    val truePositives = if (ClassificationMetricsFunctions.compareValues(scoreAndLabel.label, scoreAndLabel.score)) {
       scoreAndLabel.frequency
     }
     else {
@@ -57,7 +97,7 @@ class MultiClassMetrics[T: ClassTag](labelPredictRdd: RDD[ScoreAndLabel[T]],
   }).reduceByKey(_ + _).collectAsMap()
 
   lazy val falsePositivesByScore = labelPredictRdd.map(scoreAndLabel => {
-    val falsePositives = if (!scoreAndLabel.label.equals(scoreAndLabel.score)) {
+    val falsePositives = if (!ClassificationMetricsFunctions.compareValues(scoreAndLabel.label, scoreAndLabel.score)) {
       scoreAndLabel.frequency
     }
     else {
@@ -172,6 +212,16 @@ class MultiClassMetrics[T: ClassTag](labelPredictRdd: RDD[ScoreAndLabel[T]],
   }
 
   /**
+   * Returns string representation of the specified value
+   */
+  private def valueToString(value: Any): String = {
+    if (value == null)
+      "None"
+    else
+      value.toString
+  }
+
+  /**
    * Compute confusion matrix for labels
    */
   def confusionMatrix(): ConfusionMatrix = {
@@ -179,12 +229,12 @@ class MultiClassMetrics[T: ClassTag](labelPredictRdd: RDD[ScoreAndLabel[T]],
       ((scoreAndLabel.score, scoreAndLabel.label), scoreAndLabel.frequency)
     }).reduceByKey(_ + _).collectAsMap()
 
-    val rowLabels = predictionSummary.map { case ((score, label), frequency) => label.toString }.toSet.toList.sorted
-    val colLabels = predictionSummary.map { case ((score, label), frequency) => score.toString }.toSet.toList.sorted
+    val rowLabels = predictionSummary.map { case ((score, label), frequency) => valueToString(label) }.toSet.toList.sorted
+    val colLabels = predictionSummary.map { case ((score, label), frequency) => valueToString(score) }.toSet.toList.sorted
     val matrix = ConfusionMatrix(rowLabels, colLabels)
     predictionSummary.foreach {
       case ((score, label), frequency) =>
-        matrix.set(score.toString, label.toString, frequency)
+        matrix.set(valueToString(score), valueToString(label), frequency)
     }
     matrix
   }

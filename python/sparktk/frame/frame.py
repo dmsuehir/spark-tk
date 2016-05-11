@@ -157,8 +157,8 @@ class Frame(object):
     from sparktk.frame.ops.add_columns import add_columns
     from sparktk.frame.ops.assign_sample import assign_sample
     from sparktk.frame.ops.bin_column import bin_column
+    from sparktk.frame.ops.binary_classification_metrics import binary_classification_metrics
     from sparktk.frame.ops.categorical_summary import categorical_summary
-    from sparktk.frame.ops.classification_metrics import classification_metrics
     from sparktk.frame.ops.column_median import column_median
     from sparktk.frame.ops.column_mode import column_mode
     from sparktk.frame.ops.column_summary_statistics import column_summary_statistics
@@ -176,6 +176,7 @@ class Frame(object):
     from sparktk.frame.ops.filter import filter
     from sparktk.frame.ops.histogram import histogram
     from sparktk.frame.ops.inspect import inspect
+    from sparktk.frame.ops.multiclass_classification_metrics import multiclass_classification_metrics
     from sparktk.frame.ops.quantile_bin_column import quantile_bin_column
     from sparktk.frame.ops.quantiles import quantiles
     from sparktk.frame.ops.rename_columns import rename_columns
