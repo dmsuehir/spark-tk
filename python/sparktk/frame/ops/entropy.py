@@ -24,7 +24,6 @@ def entropy(self, data_column, weights_column=None):
     -etc-
 
     </hide>
-    Given a frame of coin flips, half heads and half tails, the entropy is simply ln(2):
 
     >>> frame.inspect()
     [#]  data  weight
