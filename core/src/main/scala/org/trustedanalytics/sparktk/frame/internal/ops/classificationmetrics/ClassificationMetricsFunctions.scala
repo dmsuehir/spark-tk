@@ -153,9 +153,7 @@ object ClassificationMetricsFunctions extends Serializable {
   def compareValues(valueA: Any, valueB: Any): Boolean = {
     if (valueA != null && valueB != null)
       return valueA.equals(valueB)
-    else if (valueA == null && valueB == null)
-      return true
     else
-      return false
+      return (valueA == null && valueB == null)
   }
 }

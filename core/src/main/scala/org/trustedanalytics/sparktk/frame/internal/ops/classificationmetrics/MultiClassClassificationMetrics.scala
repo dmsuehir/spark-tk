@@ -62,8 +62,6 @@ case class MultiClassClassificationMetrics(labelColumn: String,
 
 /**
  * Model Accuracy, Precision, Recall, FMeasure, Confusion matrix for multi-class
- *
- * TODO: this class doesn't really belong in the Engine but it is shared code that both frame-plugins and model-plugins need access to
  */
 class MultiClassMetrics[T: ClassTag](labelPredictRdd: RDD[ScoreAndLabel[T]],
                                      beta: Double = 1) extends Serializable {

@@ -66,8 +66,6 @@ case class BinaryClassificationMetrics(labelColumn: String,
 
 /**
  * Model Accuracy, Precision, Recall, FMeasure, Confusion matrix for binary-class
- *
- * TODO: this class doesn't really belong in the Engine but it is shared code that both frame-plugins and model-plugins need access to
  */
 case class BinaryClassCounter(var truePositives: Long = 0,
                               var falsePositives: Long = 0,
@@ -84,6 +82,13 @@ case class BinaryClassCounter(var truePositives: Long = 0,
   }
 }
 
+/**
+ * Class used for calculating binary classification metrics
+ * @param labelPredictRdd RDD of scores, labels, and associated frequency
+ * @param positiveLabel The value to be interpreted as a positive instance for binary classification.
+ * @param beta This is the beta value to use for :math:`F_{ \beta}` measure (default F1 measure is
+ *             computed); must be greater than zero. Default is 1.
+ */
 case class BinaryClassMetrics[T](labelPredictRdd: RDD[ScoreAndLabel[T]],
                                  positiveLabel: Any,
                                  beta: Double = 1) extends Serializable {
