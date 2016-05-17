@@ -11,6 +11,7 @@ import json
 import re
 from pyspark.sql import types
 
+
 # alias numpy types
 # todo: bring back the numpy types
 # this is temporary until the serialization gets completely figured out...
@@ -238,7 +239,7 @@ class _DataTypes(object):
 
     @staticmethod
     def get_from_string(data_type_str):
-        """import
+        """
         Returns the data type for the given type string representation
 
         Parameters

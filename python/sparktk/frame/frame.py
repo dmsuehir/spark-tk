@@ -13,7 +13,15 @@ def load_frame(tc, path):
 
 
 def load_frame_from_csv(tc, path, delimiter=",", header=False, inferschema=True, schema=None):
-    from pyspark.sql import SQLContext, types
+    from pyspark.sql import SQLContext
+
+    if schema is not None:
+        inferschema = False   # if a custom schema is provided, don't waste time inferring the schema during load
+    if not isinstance(header, bool):
+        raise ValueError("header parameter must be a boolean, but is {0}.".format(type(header)))
+    if not isinstance(inferschema, bool):
+        raise ValueError("inferschema parameter must be a boolean, but is {0}.".format(type(inferschema)))
+
     header_str = str(header).lower()
     inferschema_str = str(inferschema).lower()
     sqlContext = SQLContext(tc.sc)

@@ -27,11 +27,11 @@ def test_load_from_csv_with_custom_schema(tc):
     try:
         # Test with bad schema (incorrect number of columns)
         tc.load_frame_from_csv(path, "|", header=True, inferschema=False, schema=[("a", int),("b", str)])
-        raise "Expected ValueExceptino from load_frame_from_csv due to incorrect number of columns in custom schema."
+        raise "Expected ValueError from load_frame_from_csv due to incorrect number of columns in custom schema."
     except ValueError:
         pass
     except:
-        raise "Expected ValueExceptino from load_frame_from_csv due to incorrect number of columns in custom schema."
+        raise "Expected ValueError from load_frame_from_csv due to incorrect number of columns in custom schema."
 
     # Test with good schema
     schema = [("a",int),("b",str),("c",int),("d",int),("e",str),("f",str)]
@@ -47,3 +47,45 @@ def test_load_from_csv_with_no_header(tc):
     assert(f.row_count == 10)
     assert(len(f.schema) == 5)
     assert(f.schema == [('C0', str), ('C1', int), ('C2', float), ('C3', bool), ('C4', str)])
+
+
+def test_load_from_csv_with_invalid_header(tc):
+    path = "../datasets/cities.csv"
+    try:
+        # Test with non-boolean header value
+        tc.load_frame_from_csv(path, "|", header=5)
+        raise "Expected ValueError from load_frame_from_csv due to invalid (int) header parameter data type."
+    except ValueError:
+        pass
+    except:
+        raise "Expected ValueError from load_frame_from_csv due to invalid (int) header parameter data type."
+
+    try:
+        # Test with non-boolean header value
+        tc.load_frame_from_csv(path, "|", header="true")
+        raise "Expected ValueError from load_frame_from_csv due to invalid (string) header parameter data type."
+    except ValueError:
+        pass
+    except:
+        raise "Expected ValueError from load_frame_from_csv due to invalid (string) header parameter data type."
+
+
+def test_load_from_csv_with_invalid_inferschema(tc):
+    path = "../datasets/cities.csv"
+    try:
+        # Test with non-boolean inferschema value
+        tc.load_frame_from_csv(path, "|", inferschema=5)
+        raise "Expected ValueError from load_frame_from_csv due to invalid (int) inferschema parameter data type."
+    except ValueError:
+        pass
+    except:
+        raise "Expected ValueError from load_frame_from_csv due to invalid (int) inferschema parameter data type."
+
+    try:
+        # Test with non-boolean inferschema value
+        tc.load_frame_from_csv(path, "|", inferschema="true")
+        raise "Expected ValueError from load_frame_from_csv due to invalid (string) inferschema parameter data type."
+    except ValueError:
+        pass
+    except:
+        raise "Expected ValueError from load_frame_from_csv due to invalid (string) inferschema parameter data type."

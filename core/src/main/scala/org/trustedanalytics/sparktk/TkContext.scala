@@ -33,7 +33,12 @@ class TkContext(jsc: JavaSparkContext) extends Serializable {
                        header: Boolean = false,
                        inferSchema: Boolean = false,
                        schema: Option[Schema] = None): Frame = {
-    val frameRdd: FrameRdd = Load.loadFromCsv(path, delimiter, header, inferSchema, sc)
+    // If a custom schema is provided there's no reason to infer the schema during the load
+    val loadWithInferSchema = if (schema.isDefined) false else inferSchema
+
+    // Load from csv
+    val frameRdd: FrameRdd = Load.loadFromCsv(path, delimiter, header, loadWithInferSchema, sc)
+
     if (schema.isDefined) {
       val numSpecifiedColumns = schema.get.columns.length
       val numColumnsFromLoad = frameRdd.frameSchema.columns.length
