@@ -162,6 +162,7 @@ class Frame(object):
     from sparktk.frame.ops.column_median import column_median
     from sparktk.frame.ops.column_mode import column_mode
     from sparktk.frame.ops.column_summary_statistics import column_summary_statistics
+    from sparktk.frame.ops.copy import copy
     from sparktk.frame.ops.correlation import correlation
     from sparktk.frame.ops.correlation_matrix import correlation_matrix
     from sparktk.frame.ops.count import count

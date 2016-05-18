@@ -30,6 +30,7 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
     with ColumnMedianSummarization
     with ColumnModeSummarization
     with ColumnSummaryStatisticsSummarization
+    with CopySummarization
     with CorrelationMatrixSummarization
     with CorrelationSummarization
     with CountSummarization
