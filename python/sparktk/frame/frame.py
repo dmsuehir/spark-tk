@@ -192,6 +192,7 @@ class Frame(object):
     # Frame Operations
 
     from sparktk.frame.ops.add_columns import add_columns
+    from sparktk.frame.ops.append import append
     from sparktk.frame.ops.assign_sample import assign_sample
     from sparktk.frame.ops.bin_column import bin_column
     from sparktk.frame.ops.binary_classification_metrics import binary_classification_metrics
