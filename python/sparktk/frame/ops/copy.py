@@ -104,7 +104,7 @@ def copy(self, columns=None, where=None):
     elif isinstance(columns, dict):
         column_indices = [i for i, column in enumerate(self._python.schema) if column[0] in columns.keys()]
     elif columns is None:
-        column_indices = range(0, len(self._python.schema))
+        column_indices = xrange(0, len(self._python.schema))
     else:
         raise ValueError("Unsupported type for 'columns' parameter. Expected str, list, dict, or None, but was: {0}".format(type(columns)))
 
