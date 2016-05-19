@@ -10,7 +10,7 @@ def append(self, frame):
     In this example, we start off by creating a frame of animals.
 
     .. code::
-    
+
         >>> animals = tc.to_frame([['dog', 'snoopy'],['cat', 'tom'],['bear', 'yogi'],['mouse', 'jerry']],
         ...                       [('animal', str), ('name', str)])
         <progress>
