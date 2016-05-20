@@ -15,8 +15,6 @@ trait BinColumnTransformWithResult extends BaseFrame {
    * list of bin cutoff points.
    *
    * @note
-   *       1. Unicode in column names is not supported and will likely cause the drop_frames() method (and others) to
-   *       fail!
    *       1. Bins IDs are 0-index, in other words, the lowest bin number is 0.
    *       1. The first and last cutoffs are always included in the bins. When ''include_lowest'' is ``True``, the last
    *       bin includes both cutoffs. When ''include_lowest'' is ``False``, the first bin (bin 0) includes both cutoffs.
