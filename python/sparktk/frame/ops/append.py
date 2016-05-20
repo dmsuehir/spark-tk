@@ -46,8 +46,6 @@ def append(self, frame):
 
     """
     from sparktk.frame.frame import Frame
-    if frame is None:
-        raise TypeError("frame parameter is required.")
     if not isinstance(frame, Frame):
         raise TypeError("frame must be a Frame type, but is: {0}".format(type(frame)))
     self._scala.append(frame._scala)
