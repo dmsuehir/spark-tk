@@ -7,6 +7,7 @@ import org.trustedanalytics.sparktk.frame.Frame
 trait AppendFrameTransform extends BaseFrame {
   /**
    * Adds more data to the current frame.
+   *
    * @param frame Frame of data to append
    */
   def append(frame: Frame): Unit = {

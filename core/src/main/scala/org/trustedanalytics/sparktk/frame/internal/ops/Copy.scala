@@ -6,19 +6,21 @@ import org.trustedanalytics.sparktk.frame.internal.{ FrameState, FrameSummarizat
 import org.trustedanalytics.sparktk.frame.Frame
 
 trait CopySummarization extends BaseFrame {
+  /**
+   * Copies specified columns into a new Frame object, optionally renaming them and/or filtering them.
+   *
+   * @param columns Optional dictionary of column names to include in the copy and target names.  The default
+   *                behavior is that all columns will be included in the frame that is returned.
+   * @param where Optional function to filter the rows that are included.  The default behavior is that
+   *              all rows will be included in the frame that is returned.
+   * @return New frame object.
+   */
   def copy(columns: Option[Map[String, String]] = None,
            where: Option[Row => Boolean] = None): Frame = {
     execute(Copy(columns, where))
   }
 }
 
-/**
- * Create a new frame with copied columns.
- * @param columns Optional dictionary of column names to include in the copy and target names.  The default
- *                behavior is that all columns will be included in the frame that is returned.
- * @param where Optional function to filter the rows that are included.  The default behavior is that
- *              all rows will be included in the frame that is returned.
- */
 case class Copy(columns: Option[Map[String, String]] = None,
                 where: Option[Row => Boolean]) extends FrameSummarization[Frame] {
   override def work(state: FrameState): Frame = {
