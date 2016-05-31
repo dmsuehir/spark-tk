@@ -3,6 +3,7 @@ package org.trustedanalytics.sparktk.jvm
 import java.util.{ ArrayList => JArrayList, HashMap => JHashMap }
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaSparkContext
+import org.joda.time.DateTime
 
 import scala.collection.JavaConverters._
 //import scala.collection.mutable
@@ -29,6 +30,13 @@ object JConvert extends Serializable {
     item match {
       case s: String => Left(s)
       case i: Int => Right(i)
+    }
+  }
+
+  def toDateTime(item: Any): DateTime = {
+    item match {
+      case s: String => DateTime.parse(s)
+      case _ => throw new IllegalArgumentException(s"Unable to translate type ${item.getClass.getName} to DateTime.")
     }
   }
 
@@ -65,6 +73,12 @@ object JConvert extends Serializable {
   def scalaSeqToPython[T](seq: Seq[T]): JArrayList[T] = {
     val pythonList = new JArrayList[T]()
     seq.map(item => pythonList.add(item))
+    pythonList
+  }
+
+  def scalaVectorToPython[T](vector: Vector[T]): JArrayList[T] = {
+    val pythonList = new JArrayList[T]()
+    vector.map(item => pythonList.add(item))
     pythonList
   }
 
