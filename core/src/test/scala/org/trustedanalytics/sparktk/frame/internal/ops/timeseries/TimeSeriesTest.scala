@@ -17,15 +17,13 @@
 package org.trustedanalytics.sparktk.frame.internal.ops.timeseries
 
 import java.sql.Timestamp
-import java.time.format.{ DateTimeFormatter, DateTimeParseException }
-
+import java.time.format.{ DateTimeFormatter }
 import com.cloudera.sparkts.{ TimeSeriesRDD, DayFrequency, DateTimeIndex }
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{ Row, DataFrame, SQLContext }
-import org.joda.time.format.ISODateTimeFormat
 import org.trustedanalytics.sparktk.frame.internal.rdd.FrameRdd
-import org.trustedanalytics.sparktk.frame.{ Column, DataTypes, FrameSchema, Schema }
+import org.trustedanalytics.sparktk.frame.{ Column, DataTypes, FrameSchema }
 import org.trustedanalytics.sparktk.testutils.TestingSparkContextWordSpec
 import org.scalatest.Matchers
 import org.joda.time.DateTime
