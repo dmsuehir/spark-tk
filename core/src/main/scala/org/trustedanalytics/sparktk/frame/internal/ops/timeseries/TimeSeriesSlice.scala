@@ -51,16 +51,16 @@ case class TimeSeriesSlice(dateTimeIndex: List[DateTime],
     val dates = TimeSeriesFunctions.createDateTimeIndex(dateTimeIndex)
 
     // Discover the column names of the key and value column
-    val (keyColumn, valueColumn) = TimeSeriesFunctions.discoverKeyAndValueColumns(state.schema)
+    val columnNames = TimeSeriesFunctions.discoverKeyAndValueColumns(state.schema)
 
     // Create TimeSeriesRDD
-    val timeSeriesRdd = TimeSeriesFunctions.createTimeSeriesRDD(keyColumn, valueColumn, state, dates)
+    val timeSeriesRdd = TimeSeriesFunctions.createTimeSeriesRDD(columnNames.keyColumnName, columnNames.valueColumnName, state, dates)
 
     // Perform Slice
     val sliced = timeSeriesRdd.slice(TimeSeriesFunctions.parseZonedDateTime(start), TimeSeriesFunctions.parseZonedDateTime(end))
 
     // Convert back to a frame to return
-    TimeSeriesFunctions.createFrameFromTimeSeries(sliced, keyColumn, valueColumn)
+    TimeSeriesFunctions.createFrameFromTimeSeries(sliced, columnNames.keyColumnName, columnNames.valueColumnName)
   }
 
 }

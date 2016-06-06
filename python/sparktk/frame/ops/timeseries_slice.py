@@ -29,8 +29,6 @@ def timeseries_slice(self, date_time_index, start, end):
 
     </hide>
 
-    .. code::
-
         >>> ts_frame.inspect()
         [#]  key  series
         ==================================
@@ -41,13 +39,10 @@ def timeseries_slice(self, date_time_index, start, end):
     Next, we define the date/time index.  In this example, it is one day intervals from
     2016-01-01 to 2016-01-06:
 
-    .. code::
-
         >>> datetimeindex = ["2016-01-01T12:00:00.000Z","2016-01-02T12:00:00.000Z","2016-01-03T12:00:00.000Z","2016-01-04T12:00:00.000Z","2016-01-05T12:00:00.000Z","2016-01-06T12:00:00.000Z"]
 
     Get a slice of our time series from 2016-01-02 to 2016-01-04:
 
-    .. code::
         >>> slice_start = "2016-01-02T12:00:00.000Z"
         >>> slice_end = "2016-01-04T12:00:00.000Z"
 
@@ -56,16 +51,12 @@ def timeseries_slice(self, date_time_index, start, end):
 
     Take a look at our sliced time series:
 
-    .. code::
-
         >>> sliced_frame.inspect()
         [#]  key  series
         ============================
         [0]  A    [55.0, 60.0, 61.0]
         [1]  B    [58.0, 61.0, 62.0]
         [2]  C    [68.0, 68.0, 70.0]
-
-
 
     """
     if not isinstance(date_time_index, list):

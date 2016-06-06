@@ -79,51 +79,33 @@ object TimeSeriesFunctions extends Serializable {
   }
 
   /**
+   * Return value to discoverKeyAndValueColumns
+   * @param keyColumnName Name of the key column
+   * @param valueColumnName Name of the value column
+   */
+  case class KeyAndValueColumnReturn(keyColumnName: String, valueColumnName: String)
+
+  /**
    * Discovers the names of the column that contain the string key and vector of time series values.  The schema
    * provided is expected to be for a time series frame, where we just have 2 columns: (1) String column that contains
    * the key, and (2) Vector column tha contains the time series values.  If these exact columns are not found,
    * exceptions are thrown.
    * @param schema Schema for a time series frame
-   * @return Name of the key and value columns
+   * @return Name of the key and value columns in the KeyAndValueColumnReturn object
    */
-  def discoverKeyAndValueColumns(schema: Schema): (String, String) = {
-    var keyColumn = ""
-    var valueColumn = ""
-
+  def discoverKeyAndValueColumns(schema: Schema): KeyAndValueColumnReturn = {
     if (schema.columns.size != 2)
       throw new RuntimeException("Frame has unsupported number of columns.  Time series frames are only expected to have 2 columns -- a string column (key) and a vector column (series values).")
 
-    // Get key and series column names.
-    // The frame should have just one string column for key and one vector column that has the time series values.
-    for (column <- schema.columns) {
-      val columnName = column.name
+    val first = schema.columns.head
+    val second = schema.columns.last
 
-      column.dataType match {
-        case DataTypes.string => {
-          if (keyColumn.isEmpty) {
-            keyColumn = columnName
-          }
-          else {
-            // Found two string columns
-            throw new RuntimeException(s"Frame has more than one string column ('$columnName' and '$keyColumn').  Time series frames should only have one string key column.")
-          }
-        }
-        case DataTypes.vector(length) => {
-          if (valueColumn.isEmpty) {
-            valueColumn = columnName
-          }
-          else {
-            // Found two vector columns
-            throw new RuntimeException(s"Frame has more than one vector column('$columnName' and '$valueColumn'). Time series frames should only have one vector column, which contains the series values.")
-          }
-        }
-        case _ => {
-          throw new RuntimeException(s"Frame has unsupported column type (${column.dataType.getClass.toString}.  Time series frames are only expected to have a string column (key) and a vector column (series values).")
-        }
-      }
+    // Look for the names of the string column (key) and vector column (value) to return.
+    (first.dataType, second.dataType) match {
+      case (DataTypes.string, DataTypes.vector(length)) => KeyAndValueColumnReturn(first.name, second.name)
+      case (DataTypes.vector(length), DataTypes.string) => KeyAndValueColumnReturn(second.name, first.name)
+      case _ => throw new RuntimeException(s"Frame has unsupported column datatypes.  Expected a string and vector column, but found ${first.dataType} and ${second.dataType}.")
     }
-
-    (keyColumn, valueColumn)
   }
 
   /**

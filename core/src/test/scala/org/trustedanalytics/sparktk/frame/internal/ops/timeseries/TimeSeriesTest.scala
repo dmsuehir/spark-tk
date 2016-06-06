@@ -157,10 +157,10 @@ class TimeSeriesTest extends TestingSparkContextWordSpec with Matchers {
       val expectedValueColumn = "TimeSeries"
       val frameSchema = FrameSchema(Vector(Column(expectedKeyColumn, DataTypes.string), Column(expectedValueColumn, DataTypes.vector(2))))
 
-      val (actualKeyColumn, actualValueColumn) = TimeSeriesFunctions.discoverKeyAndValueColumns(frameSchema)
+      val actualColumnNames = TimeSeriesFunctions.discoverKeyAndValueColumns(frameSchema)
 
-      assert(expectedKeyColumn == actualKeyColumn)
-      assert(expectedValueColumn == actualValueColumn)
+      assert(expectedKeyColumn == actualColumnNames.keyColumnName)
+      assert(expectedValueColumn == actualColumnNames.valueColumnName)
     }
 
     "throw an exception when the schema does not conform to a time series frame" in {
