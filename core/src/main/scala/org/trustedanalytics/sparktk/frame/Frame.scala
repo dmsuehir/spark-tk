@@ -11,7 +11,7 @@ import org.trustedanalytics.sparktk.frame.internal.ops.binning.{ BinColumnTransf
 import org.trustedanalytics.sparktk.frame.internal.ops.classificationmetrics.{ MultiClassClassificationMetricsSummarization, BinaryClassificationMetricsSummarization }
 import org.trustedanalytics.sparktk.frame.internal.ops.cumulativedist.{ CumulativePercentTransform, CumulativeSumTransform, EcdfSummarization, TallyPercentTransform, TallyTransform }
 import org.trustedanalytics.sparktk.frame.internal.ops.sample.AssignSampleTransform
-import org.trustedanalytics.sparktk.frame.internal.ops.exportdata.ExportToCsvSummarization
+import org.trustedanalytics.sparktk.frame.internal.ops.exportdata.{ ExportToCsvSummarization, ExportToHbaseSummarization, ExportToHiveSummarization, ExportToJdbcSummarization, ExportToJsonSummarization }
 import org.trustedanalytics.sparktk.frame.internal.ops.flatten.FlattenColumnsTransform
 import org.trustedanalytics.sparktk.frame.internal.ops.RenameColumnsTransform
 import org.trustedanalytics.sparktk.frame.internal.ops.sortedk.SortedKSummarization
@@ -49,6 +49,10 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
     with EcdfSummarization
     with EntropySummarization
     with ExportToCsvSummarization
+    with ExportToHbaseSummarization
+    with ExportToHiveSummarization
+    with ExportToJdbcSummarization
+    with ExportToJsonSummarization
     with FlattenColumnsTransform
     with HistogramSummarization
     with MultiClassClassificationMetricsSummarization
@@ -70,6 +74,7 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
 
   /**
    * (typically called from pyspark, with jrdd)
+   *
    * @param jrdd java array of Any
    * @param schema frame schema
    */
@@ -84,6 +89,7 @@ object Frame extends TkSaveableObject {
 
   /**
    * Loads a parquet file found at the given path and returns a Frame
+   *
    * @param sc active SparkContext
    * @param path path to the file
    * @param formatVersion TK metadata formatVersion

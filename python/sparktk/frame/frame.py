@@ -134,7 +134,7 @@ class Frame(object):
         Get the number of rows:
 
         <hide>
-        frame = tc.to_frame([[item] for item in range(0, 4)],[("a", int)])
+        frame = tc.frame.create([[item] for item in range(0, 4)],[("a", int)])
         </hide>
 
         .. code::
@@ -178,6 +178,7 @@ class Frame(object):
     from sparktk.frame.ops.drop_rows import drop_rows
     from sparktk.frame.ops.ecdf import ecdf
     from sparktk.frame.ops.entropy import entropy
+    from sparktk.frame.ops.export_data import export_to_jdbc, export_to_json, export_to_hbase, export_to_hive
     from sparktk.frame.ops.filter import filter
     from sparktk.frame.ops.flatten_columns import flatten_columns
     from sparktk.frame.ops.histogram import histogram
