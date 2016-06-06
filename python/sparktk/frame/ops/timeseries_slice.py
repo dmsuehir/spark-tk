@@ -61,8 +61,12 @@ def timeseries_slice(self, date_time_index, start, end):
     """
     if not isinstance(date_time_index, list):
         raise TypeError("date_time_index should be a list of date/times")
+    if not isinstance(start, basestring):
+        raise TypeError("start date/time should be a string in the ISO 8601 format")
+    if not isinstance(end, basestring):
+        raise TypeError("end date/time should be a string in the ISO 8601 format")
 
-    return self._tc.to_frame(
+    return self._tc.frame.create(
         self._scala.timeSeriesSlice(self._tc.jutils.convert.to_scala_date_time_list(date_time_index),
                                     self._tc.jutils.convert.to_scala_date_time(start),
                                     self._tc.jutils.convert.to_scala_date_time(end)))
