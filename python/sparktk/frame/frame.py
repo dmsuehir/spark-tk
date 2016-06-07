@@ -2,7 +2,7 @@ from pyspark.rdd import RDD
 
 from sparktk.frame.pyframe import PythonFrame
 from sparktk.frame.schema import schema_to_python, schema_to_scala
-
+from sparktk import dtypes
 
 # import constructors for the API's sake (not actually dependencies of the Frame class)
 from sparktk.frame.constructors.create import create
@@ -12,7 +12,7 @@ from sparktk.frame.constructors.import_hive import import_hive
 
 class Frame(object):
 
-    def __init__(self, tc, source, schema=None):
+    def __init__(self, tc, source, schema=None, validate_schema=False):
         self._tc = tc
         if self._is_scala_frame(source):
             self._frame = source
@@ -21,18 +21,142 @@ class Frame(object):
             self._frame = self.create_scala_frame(tc.sc, source, scala_schema)
         else:
             if not isinstance(source, RDD):
+                if isinstance(schema, list):
+                    # check if schema is just a list of column names (versus string and data type tuples)
+                    if all(isinstance(item, basestring) for item in schema):
+                        schema = self._infer_schema(source, schema)
+                elif schema is None:
+                    schema = self._infer_schema(source)
                 source = tc.sc.parallelize(source)
-            if schema:
-                self.validate_pyrdd_schema(source, schema)
+            if schema and validate_schema:
+                # Validate schema by going through the data and checking the data type and attempting to parse it
+                source = self.validate_pyrdd_schema(source, schema)
             self._frame = PythonFrame(source, schema)
 
+    def _merge_types(self, type_list_a, type_list_b):
+        """
+        Merges two lists of data types
+
+        :param type_list_a: First list of data types to merge
+        :param type_list_b: Second list of data types to merge
+        :return: List of merged data types
+        """
+        merged_types = []
+        if not isinstance(type_list_a, list) or not isinstance(type_list_b, list):
+            raise TypeError("Unable to generate schema, because schema is not a list.")
+        if len(type_list_a) != len(type_list_b):
+            raise ValueError("Length of each row must be the same (found rows with lengths: %s and %s)." % (len(type_list_a), len(type_list_b)))
+        from sparktk import dtypes
+        for i in range (0, len(type_list_a)):
+            merged_type = dtypes._DataTypes.merge_types(type_list_a[i], type_list_b[i])
+            merged_types.append(merged_type)
+        return merged_types
+
+    def _infer_types_for_row(self, row):
+        """
+        Returns a list of data types for the data in the specified row
+
+        :param row: List or Row of data
+        :return: List of data types
+        """
+        inferred_types = []
+        for index, item in enumerate(row):
+            if not isinstance(item, list):
+                inferred_types.append(type(item))
+            else:
+                inferred_types.append(dtypes.vector((len(item))))
+        return inferred_types
+
+    def _infer_schema(self, data, column_names=[], sample_size=100):
+        """
+        Infers the schema based on the data in the RDD.
+
+        :param sc: Spark Context
+        :param data: Data used to infer schema
+        :param column_names: Optional column names to use in the schema.  If no column names are provided, columns
+                             are given numbered names.  If there are more columns in the RDD than there are in the
+                             column_names list, remaining columns will be numbered.
+        :param sample_size: Number of rows to check when inferring the schema.  Defaults to 100.
+        :return: Schema
+        """
+        inferred_schema = []
+
+        if isinstance(data, list):
+            if len(data) > 0:
+                # get the schema for the first row
+                data_types = self._infer_types_for_row(data[0])
+
+                if len(data) < sample_size:
+                    sample_size = len(data)
+
+                for i in range (1, sample_size):
+                    data_types = self._merge_types(data_types, self._infer_types_for_row(data[i]))
+
+                for i, data_type in enumerate(data_types):
+                    column_name = "C%s" % i
+                    if len(column_names) > i:
+                        column_name = column_names[i]
+                    inferred_schema.append((column_name, data_type))
+        else:
+            raise TypeError("Unable to infer schema, because the data provided is not a list.")
+        return inferred_schema
+
     def validate_pyrdd_schema(self, pyrdd, schema):
-        pass
+        if isinstance(pyrdd, RDD):
+            def validate_schema(row, schema):
+                data = []
+                if (len(row) != len(schema)):
+                    raise ValueError("Length of the row (%s) does not match the schema length (%s)." % (len(row), len(schema)))
+
+                for index, column in enumerate(schema):
+                    data_type = column[1]
+                    if isinstance(data_type, dtypes.vector):
+                        vector_length = data_type.length
+                        try:
+                            data.append(dtypes.vector(vector_length).constructor(row[index]))
+                        except Exception as e:
+                            raise ValueError("Unable to cast value '%s' as a vector in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                    elif not (isinstance(row[index], data_type)):
+                        if data_type == int:
+                            try:
+                                data.append(int(row[index]))
+                            except Exception as e:
+                                raise ValueError("Unable to cast value '%s' as an int in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        elif data_type == long:
+                            try:
+                                data.append(long(row[index]))
+                            except Exception as e:
+                                raise ValueError("Unable to cast value '%s' as a long in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        elif data_type == float:
+                            try:
+                                data.append(float(row[index]))
+                            except Exception as e:
+                                raise ValueError("Unable to cast value '%s' as a float in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        elif data_type == str:
+                            try:
+                                data.append(str(row[index]))
+                            except Exception as e:
+                                raise ValueError("Unable to cast value '%s' as a str in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        elif data_type == unicode:
+                            try:
+                                data.append(unicode(row[index]))
+                            except Exception as e:
+                                raise ValueError("Unable to cast value '%s' as a unicode in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        else:
+                            raise RuntimeError("Schema validation does not support data type: %s" % data_type)
+                        # TODO: datetime
+                    else:
+                        # It's already the right data type, so use the original value.
+                        data.append(row[index])
+                return data
+            return pyrdd.map(lambda row: validate_schema(row, schema))
+        else:
+            raise TypeError("Unable to validate schema, because the pyrdd provided is not an RDD.")
 
     @staticmethod
     def create_scala_frame(sc, scala_rdd, scala_schema):
         """call constructor in JVM"""
-        return sc._jvm.org.trustedanalytics.sparktk.frame.Frame(scala_rdd, scala_schema)
+        return sc._jvm.org.trustedanalytics.sparktk.frame.Frame(scala_rdd, scala_schema, False)
 
     @staticmethod
     def load(tc, scala_frame):

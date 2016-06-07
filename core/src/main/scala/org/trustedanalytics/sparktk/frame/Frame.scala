@@ -24,7 +24,7 @@ import org.trustedanalytics.sparktk.frame.internal.ops.unflatten.UnflattenColumn
 import org.trustedanalytics.sparktk.frame.internal.rdd.{ FrameRdd, PythonJavaRdd }
 import org.trustedanalytics.sparktk.saveload.TkSaveableObject
 
-class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params named "frameRdd" and "frameSchema" because naming them "rdd" and "schema" masks the base members "rdd" and "schema" in this scope
+class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = false) extends BaseFrame with Serializable // params named "frameRdd" and "frameSchema" because naming them "rdd" and "schema" masks the base members "rdd" and "schema" in this scope
     with AddColumnsTransform
     with AppendFrameTransform
     with AssignSampleTransform
@@ -67,7 +67,20 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema) extends BaseFrame // params
     with TallyTransform
     with TopKSummarization
     with UnflattenColumnsTransform {
-  init(frameRdd, frameSchema)
+
+  // Infer schema, if a schema was not provided
+  val updatedSchema = if (frameSchema == null) {
+    SchemaHelper.inferSchema(frameRdd, 100, None)
+  }
+  else
+    frameSchema
+
+  val updatedRdd = if (validateSchema)
+    validateSchema(frameRdd, updatedSchema)
+  else
+    frameRdd
+
+  init(updatedRdd, updatedSchema)
 
   /**
    * (typically called from pyspark, with jrdd)
