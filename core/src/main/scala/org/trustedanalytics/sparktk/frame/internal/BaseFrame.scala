@@ -30,15 +30,17 @@ trait BaseFrame {
    */
   protected def validateSchema(rddToValidate: RDD[Row], schemaToValidate: Schema): RDD[Row] = {
     val columnCount = schemaToValidate.columns.length
+    val schemaWithIndex = schemaToValidate.columns.zipWithIndex
+
     rddToValidate.map(row => {
       if (row.length != columnCount)
         throw new RuntimeException(s"Row length of ${row.length} does not match the number of columns in the schema (${columnCount}).")
 
-      val parsedValues = schemaToValidate.columns.zipWithIndex.map {
+      val parsedValues = schemaWithIndex.map {
         case (column, index) =>
           column.dataType.parse(row.get(index)) match {
             case Success(value) => value
-            case Failure(e) => throw e
+            case Failure(e) => null
           }
       }
 

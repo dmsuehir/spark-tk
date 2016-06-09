@@ -114,34 +114,40 @@ class Frame(object):
                         vector_length = data_type.length
                         try:
                             data.append(dtypes.vector(vector_length).constructor(row[index]))
-                        except Exception as e:
-                            raise ValueError("Unable to cast value '%s' as a vector in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                        except:
+                            # Unable to cast as vector
+                            data.append(None)
                     elif not (isinstance(row[index], data_type)):
                         if data_type == int:
                             try:
                                 data.append(int(row[index]))
-                            except Exception as e:
-                                raise ValueError("Unable to cast value '%s' as an int in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                            except:
+                                # Unable to cast value to an integer
+                                data.append(None)
                         elif data_type == long:
                             try:
                                 data.append(long(row[index]))
-                            except Exception as e:
-                                raise ValueError("Unable to cast value '%s' as a long in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                            except:
+                                # Unable to cast to a long
+                                data.append(None)
                         elif data_type == float:
                             try:
                                 data.append(float(row[index]))
-                            except Exception as e:
-                                raise ValueError("Unable to cast value '%s' as a float in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                            except:
+                                # Unable to cast to float
+                                data.append(None)
                         elif data_type == str:
                             try:
                                 data.append(str(row[index]))
-                            except Exception as e:
-                                raise ValueError("Unable to cast value '%s' as a str in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                            except:
+                                # Unable to cast to string
+                                data.append(None)
                         elif data_type == unicode:
                             try:
                                 data.append(unicode(row[index]))
-                            except Exception as e:
-                                raise ValueError("Unable to cast value '%s' as a unicode in row #%s, column %s. \n%s" % (row[index], index, column[0], str(e)))
+                            except:
+                                # Unable to cast to unicode
+                                data.append(None)
                         else:
                             raise RuntimeError("Schema validation does not support data type: %s" % data_type)
                         # TODO: datetime

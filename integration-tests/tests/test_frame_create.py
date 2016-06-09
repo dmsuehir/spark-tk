@@ -55,7 +55,7 @@ def test_create_with_schema_validation(tc):
     """
     Checks use cases with schema validation enabled.  Checks  use cases where we have all integers or a mix of integers
     and floats in the first 100 rows.  Verifies that in the case of mixed integers and floats, the integers should be
-    casted to floats.  Checks for an exception in the use case where we have 100 integers followed by several strings
+    casted to floats.  Checks for missing values in the use case where we have 100 integers followed by several strings
     that cannot be casted to integers.
     """
     # Test use case where we have more than 100 rows, all integers
@@ -74,10 +74,9 @@ def test_create_with_schema_validation(tc):
     assert(all(isinstance(row[0], float) for row in data))
     # Test use case where we have more than 100 rows of integers and then strings
     data = [[i] for i in xrange(0,100)] + [["xyz" + str(i)] for i in xrange(0,20)]
-    try:
-        frame = tc.frame.create(data, validate_schema=True)
-        frame.take(frame.row_count).data
-        raise RuntimeError("Expected exception due to strings not being able to be parsed as integers")
-    except:
-        pass
+    frame = tc.frame.create(data, validate_schema=True)
+    values = frame.take(frame.row_count).data
+    # The last 20 rows of "xyz" should be None since they can't be parsed to integers
+    for item in values[100:len(values)]:
+        assert(item == [None])
 

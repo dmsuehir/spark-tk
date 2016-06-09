@@ -7,7 +7,7 @@ def create(data, schema=None, validate_schema=False, tc=implicit):
 
     If schema validation is enabled, all data is is checked to ensure that it matches the schema.  If the data does
     not match the schema's data type, it attempts to cast the data to the proper data type.  When the data is unable
-    to be casted to the schema's data type, a ValueError is raised.
+    to be casted to the schema's data type, the item will be missing (None) in the frame.
 
     :param data: Data source
     :param schema: Optionally specify a schema (list of tuples of string column names and data type), column names
@@ -77,6 +77,25 @@ def create(data, schema=None, validate_schema=False, tc=implicit):
         [2]  Sue        25        7.0
         [3]  George     15        6.0
         [4]  Jennifer   18        8.5
+
+    Note that if a value cannot be parsed as the specified data type in the schema, it will show up as missing (None),
+    if validate_schema is enabled.  For example, consider the following frame where columns are defined as integers,
+    but the data specified has a string in the second row.
+
+        >>> data = [[1, 2, 3], [4, "five", 6]]
+        >>> schema = [("a", int), ("b", int), ("c", int)]
+
+        >>> frame = tc.frame.create(data, schema, validate_schema = True)
+
+        >>> frame.inspect()
+        [#]  a  b     c
+        ===============
+        [0]  1     2  3
+        [1]  4  None  6
+
+    Note that the spot where the string was located, has it's value missing (None) since it couldn't be parsed to an
+    integer.  If validate_schema was disabled, no attempt is made to parse the data to the data type specified by the
+    schema, and further frame operations may fail due to the data type discrepancy.
 
     """
     from sparktk.frame.frame import Frame

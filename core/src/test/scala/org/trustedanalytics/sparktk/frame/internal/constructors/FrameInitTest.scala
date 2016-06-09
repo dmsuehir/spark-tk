@@ -96,16 +96,16 @@ class FrameInitTest extends TestingSparkContextWordSpec {
       assert(frame.take(frame.rowCount.toInt).forall(row => row.get(0).isInstanceOf[Double]))
     }
 
-    "throw an exception if data past the first 100 rows does not match the schema, when validation is enabled" in {
+    "include missing values, if data past the first 100 rows does not match the schema, when validation is enabled" in {
       val intRows: Array[Row] = Array.fill(100) { new GenericRow(Array[Any](1)) }
       val floatRows: Array[Row] = Array.fill(20) { new GenericRow(Array[Any]("a")) }
       val rows: Array[Row] = intRows ++ floatRows
       val rdd = sparkContext.parallelize(rows)
+      val frame = new Frame(rdd, null, validateSchema = true)
+      val data = frame.take(frame.rowCount.toInt)
+      // check for missing values
+      data.slice(100, data.length).foreach(r => assert(r.get(0) == null))
 
-      intercept[Exception] {
-        val frame = new Frame(rdd, null, validateSchema = true)
-        frame.take(frame.rowCount.toInt)
-      }
     }
 
     "no exception if data past the first 100 rows does not match the schema, if validation is disabled" in {
