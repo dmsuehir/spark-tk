@@ -28,8 +28,6 @@
     padding: 30px;
     overflow: auto;
     height: 100%;
-    resize: horizontal;
-    z-index: -1;  /* put it at the bottom so that UP link is on top */
   }
   #nav {
     font-size: 130%;
@@ -53,6 +51,7 @@
     font-size: .85em;
     text-transform: uppercase;
     background: transparent;
+    z-index: 1;  /* Set z-index so that it doesn't get lost behind the sidebar */
   }
 
   #footer {
