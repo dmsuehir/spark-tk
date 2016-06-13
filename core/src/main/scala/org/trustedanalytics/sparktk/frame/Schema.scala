@@ -260,7 +260,7 @@ object SchemaHelper {
   private def mergeType(dataTypeA: DataType, dataTypeB: DataType): DataType = {
     val numericTypes = List[DataType](DataTypes.float64, DataTypes.float32, DataTypes.int64, DataTypes.int32)
 
-    if (dataTypeA == dataTypeB)
+    if (dataTypeA.equalsDataType(dataTypeB))
       dataTypeA
     else if (dataTypeA == DataTypes.string || dataTypeB == DataTypes.string)
       DataTypes.string
@@ -271,18 +271,8 @@ object SchemaHelper {
         dataTypeA
     }
     else if (dataTypeA.isVector && dataTypeB.isVector) {
-      val vectorALength = dataTypeA match {
-        case DataTypes.vector(length) => length
-        case _ => 0
-      }
-      val vectorBLength = dataTypeB match {
-        case DataTypes.vector(length) => length
-        case _ => 0
-      }
-      if (vectorALength != vectorBLength)
-        throw new RuntimeException(s"Vectors must all be the same length (found vectors with length ${dataTypeA.length} and ${dataTypeB.length}).")
-      else
-        DataTypes.vector(vectorALength)
+      throw new RuntimeException(s"Vectors must all be the same length (found vectors with length " +
+        s"${dataTypeA.asInstanceOf[DataTypes.vector].length} and ${dataTypeB.asInstanceOf[DataTypes.vector].length}).")
     }
     else
       // Unable to merge types, default to use a string
@@ -299,12 +289,8 @@ object SchemaHelper {
   }
 
   private def inferDataTypes(row: Row): Vector[DataType] = {
-    val dataTypes = ListBuffer[DataType]()
-
-    for (i <- 0 until row.length) {
-      val value = row.get(i)
-
-      dataTypes.append(value match {
+    row.toSeq.map(value => {
+      value match {
         case i: Int => DataTypes.int32
         case l: Long => DataTypes.int64
         case f: Float => DataTypes.float32
@@ -313,10 +299,8 @@ object SchemaHelper {
         case l: List[_] => DataTypes.vector(l.length)
         case a: Array[_] => DataTypes.vector(a.length)
         case s: Seq[_] => DataTypes.vector(s.length)
-      })
-    }
-
-    dataTypes.toVector
+      }
+    }).toVector
   }
 
   /**
@@ -326,15 +310,12 @@ object SchemaHelper {
    * @return Schema inferred from the data
    */
   def inferSchema(data: RDD[Row], sampleSize: Int, columnNames: Option[List[String]]): Schema = {
-    val sampleSet = data.take(if (data.count() < sampleSize) data.count().toInt else sampleSize)
+    val sampleSet = data.take(math.min(data.count.toInt, sampleSize))
 
-    var dataTypes: Vector[DataType] = null
+    var dataTypes: Vector[DataType] = inferDataTypes(sampleSet.head)
 
-    for (row <- sampleSet) {
-      if (dataTypes != null)
-        dataTypes = mergeTypes(dataTypes, inferDataTypes(row))
-      else
-        dataTypes = inferDataTypes(row)
+    for (i <- 1 until sampleSet.length) {
+      dataTypes = mergeTypes(dataTypes, inferDataTypes(sampleSet(i)))
     }
 
     val schemaColumnNames = columnNames.getOrElse(List[String]())

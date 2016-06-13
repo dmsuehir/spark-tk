@@ -1,6 +1,41 @@
 from setup import tc, rm, get_sandbox_path
 from sparktk import dtypes
 
+def invalid_schema_type(tc):
+    """
+    Verifies that an exception is thrown if a schema that's not a list or strings, list of tuples (str, type),
+    or None is passed.
+    """
+    try:
+        tc.frame.create([[1]], schema=7)
+        raise RuntimeError("Expected TypeError when passing a schema that is just an integer")
+    except TypeError:
+        pass
+
+    try:
+        tc.frame.create([[1]], schema="test")
+        raise RuntimeError("Expected TypeError when passing a schema that is just a string")
+    except TypeError:
+        pass
+
+    try:
+        tc.frame.create([[1, 2, 3]], schema=["col_a", "col_b", 1])
+        raise RuntimeError("Expected TypeError when passing a schema is a list of strings and ints.")
+    except TypeError:
+        pass
+
+    try:
+        tc.frame.create([[1, 2, 3]], schema=[("col_a", str), ("col_b")])
+        raise RuntimeError("Expected TypeError when passing a schema has incorrect tuple length.")
+    except TypeError:
+        pass
+
+    try:
+        tc.frame.create([[1, 2, 3]], schema=[("col_a", str), ("col_b", "str")])
+        raise RuntimeError("Expected TypeError when passing a schema has incorrect tuple type.")
+    except TypeError:
+        pass
+
 def test_create_frame_with_column_names(tc):
     """
     Create a frame with a list of column names.  Data types should be inferred.

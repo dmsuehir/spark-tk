@@ -3,6 +3,8 @@ from pyspark.rdd import RDD
 from sparktk.frame.pyframe import PythonFrame
 from sparktk.frame.schema import schema_to_python, schema_to_scala
 from sparktk import dtypes
+import logging
+logger = logging.getLogger('sparktk')
 
 # import constructors for the API's sake (not actually dependencies of the Frame class)
 from sparktk.frame.constructors.create import create
@@ -22,11 +24,22 @@ class Frame(object):
         else:
             if not isinstance(source, RDD):
                 if isinstance(schema, list):
-                    # check if schema is just a list of column names (versus string and data type tuples)
                     if all(isinstance(item, basestring) for item in schema):
+                        # check if schema is just a list of column names (versus string and data type tuples)
                         schema = self._infer_schema(source, schema)
+                    elif not all(isinstance(item, tuple) and
+                                  len(item) == 2 and
+                                  isinstance(item[0], str) for item in schema):
+                        raise TypeError("Invalid schema.  Expected a list of tuples (str, type) with the column name and data type." % type(schema))
+                    else:
+                        for item in schema:
+                            if not self._is_supported_datatype(item[1]):
+                                raise TypeError("Invalid schema.  %s is not a supported data type." % str(item[1]))
                 elif schema is None:
                     schema = self._infer_schema(source)
+                else:
+                    # Schema is not a list or None
+                    raise TypeError("Invalid schema type: %s.  Expected a list of tuples (str, type) with the column name and data type." % type(schema))
                 source = tc.sc.parallelize(source)
             if schema and validate_schema:
                 # Validate schema by going through the data and checking the data type and attempting to parse it
@@ -41,16 +54,11 @@ class Frame(object):
         :param type_list_b: Second list of data types to merge
         :return: List of merged data types
         """
-        merged_types = []
         if not isinstance(type_list_a, list) or not isinstance(type_list_b, list):
             raise TypeError("Unable to generate schema, because schema is not a list.")
         if len(type_list_a) != len(type_list_b):
             raise ValueError("Length of each row must be the same (found rows with lengths: %s and %s)." % (len(type_list_a), len(type_list_b)))
-        from sparktk import dtypes
-        for i in range (0, len(type_list_a)):
-            merged_type = dtypes._DataTypes.merge_types(type_list_a[i], type_list_b[i])
-            merged_types.append(merged_type)
-        return merged_types
+        return [dtypes._DataTypes.merge_types(type_list_a[i], type_list_b[i]) for i in xrange(0, len(type_list_a))]
 
     def _infer_types_for_row(self, row):
         """
@@ -60,7 +68,7 @@ class Frame(object):
         :return: List of data types
         """
         inferred_types = []
-        for index, item in enumerate(row):
+        for item in row:
             if not isinstance(item, list):
                 inferred_types.append(type(item))
             else:
@@ -86,10 +94,9 @@ class Frame(object):
                 # get the schema for the first row
                 data_types = self._infer_types_for_row(data[0])
 
-                if len(data) < sample_size:
-                    sample_size = len(data)
+                sample_size = min(sample_size, len(data))
 
-                for i in range (1, sample_size):
+                for i in xrange (1, sample_size):
                     data_types = self._merge_types(data_types, self._infer_types_for_row(data[i]))
 
                 for i, data_type in enumerate(data_types):
@@ -101,61 +108,40 @@ class Frame(object):
             raise TypeError("Unable to infer schema, because the data provided is not a list.")
         return inferred_schema
 
+    def _is_supported_datatype(self, data_type):
+        """
+        Returns True if the specified data_type is supported.
+        """
+        supported_primitives = [int, float, long, str, unicode]
+        # TODO: Add datetime
+        if data_type in supported_primitives:
+            return True
+        elif type(data_type) is dtypes.vector:
+            return True
+        else:
+            return False
+
     def validate_pyrdd_schema(self, pyrdd, schema):
         if isinstance(pyrdd, RDD):
-            def validate_schema(row, schema):
+            schema_length = len(schema)
+
+            num_bad_values = self._tc.sc.accumulator(0)
+            def validate_schema(row, accumulator):
                 data = []
-                if (len(row) != len(schema)):
+                if len(row) != schema_length:
                     raise ValueError("Length of the row (%s) does not match the schema length (%s)." % (len(row), len(schema)))
 
                 for index, column in enumerate(schema):
                     data_type = column[1]
-                    if isinstance(data_type, dtypes.vector):
-                        vector_length = data_type.length
-                        try:
-                            data.append(dtypes.vector(vector_length).constructor(row[index]))
-                        except:
-                            # Unable to cast as vector
-                            data.append(None)
-                    elif not (isinstance(row[index], data_type)):
-                        if data_type == int:
-                            try:
-                                data.append(int(row[index]))
-                            except:
-                                # Unable to cast value to an integer
-                                data.append(None)
-                        elif data_type == long:
-                            try:
-                                data.append(long(row[index]))
-                            except:
-                                # Unable to cast to a long
-                                data.append(None)
-                        elif data_type == float:
-                            try:
-                                data.append(float(row[index]))
-                            except:
-                                # Unable to cast to float
-                                data.append(None)
-                        elif data_type == str:
-                            try:
-                                data.append(str(row[index]))
-                            except:
-                                # Unable to cast to string
-                                data.append(None)
-                        elif data_type == unicode:
-                            try:
-                                data.append(unicode(row[index]))
-                            except:
-                                # Unable to cast to unicode
-                                data.append(None)
-                        else:
-                            raise RuntimeError("Schema validation does not support data type: %s" % data_type)
-                        # TODO: datetime
-                    else:
-                        # It's already the right data type, so use the original value.
-                        data.append(row[index])
+                    try:
+                        data.append(dtypes.dtypes.cast(row[index], data_type))
+                    except:
+                        data.append(None)
+                        accumulator += 1
                 return data
-            return pyrdd.map(lambda row: validate_schema(row, schema))
+            validated_rdd = pyrdd.map(lambda row: validate_schema(row, num_bad_values))
+            logger.debug("Found %s bad values when validating data against the schema." % num_bad_values.value)
+            return validated_rdd
         else:
             raise TypeError("Unable to validate schema, because the pyrdd provided is not an RDD.")
 

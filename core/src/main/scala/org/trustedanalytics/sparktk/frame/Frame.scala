@@ -1,5 +1,6 @@
 package org.trustedanalytics.sparktk.frame
 
+import org.apache.log4j.Logger
 import org.apache.spark.SparkContext
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
@@ -68,6 +69,8 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = f
     with TopKSummarization
     with UnflattenColumnsTransform {
 
+  private val log: Logger = Logger.getLogger(Frame.getClass)
+
   // Infer the schema, if a schema was not provided
   val updatedSchema = if (frameSchema == null) {
     SchemaHelper.inferSchema(frameRdd, 100, None)
@@ -76,8 +79,14 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = f
     frameSchema
 
   // Validate the data against the schema, if the validateSchema is enabled
-  val updatedRdd = if (validateSchema)
-    validateSchema(frameRdd, updatedSchema)
+  val updatedRdd = if (validateSchema) {
+    val schemaValidation = validateSchema(frameRdd, updatedSchema)
+
+    if (schemaValidation.validationReport.numBadValues > 0)
+      log.warn(s"Schema validation found ${schemaValidation.validationReport.numBadValues} bad values.")
+
+    schemaValidation.validatedRdd
+  }
   else
     frameRdd
 
