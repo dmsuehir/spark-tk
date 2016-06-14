@@ -312,10 +312,8 @@ object SchemaHelper {
   def inferSchema(data: RDD[Row], sampleSize: Int, columnNames: Option[List[String]]): Schema = {
     val sampleSet = data.take(math.min(data.count.toInt, sampleSize))
 
-    var dataTypes: Vector[DataType] = inferDataTypes(sampleSet.head)
-
-    for (i <- 1 until sampleSet.length) {
-      dataTypes = mergeTypes(dataTypes, inferDataTypes(sampleSet(i)))
+    val dataTypes = sampleSet.foldLeft(inferDataTypes(sampleSet.head)) {
+      case (v: Vector[DataType], r: Row) => mergeTypes(v, inferDataTypes(r))
     }
 
     val schemaColumnNames = columnNames.getOrElse(List[String]())

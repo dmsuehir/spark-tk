@@ -5,6 +5,7 @@ from sparktk.frame.schema import schema_to_python, schema_to_scala
 from sparktk import dtypes
 import logging
 logger = logging.getLogger('sparktk')
+from sparktk.propobj import PropertiesObject
 
 # import constructors for the API's sake (not actually dependencies of the Frame class)
 from sparktk.frame.constructors.create import create
@@ -43,7 +44,10 @@ class Frame(object):
                 source = tc.sc.parallelize(source)
             if schema and validate_schema:
                 # Validate schema by going through the data and checking the data type and attempting to parse it
-                source = self.validate_pyrdd_schema(source, schema)
+                validate_schema_result = self.validate_pyrdd_schema(source, schema)
+                source = validate_schema_result.validated_rdd
+                logger.debug("%s values were unable to be parsed to the schema's data type." % validate_schema_result.bad_value_count)
+
             self._frame = PythonFrame(source, schema)
 
     def _merge_types(self, type_list_a, type_list_b):
@@ -124,24 +128,28 @@ class Frame(object):
     def validate_pyrdd_schema(self, pyrdd, schema):
         if isinstance(pyrdd, RDD):
             schema_length = len(schema)
-
             num_bad_values = self._tc.sc.accumulator(0)
+
             def validate_schema(row, accumulator):
                 data = []
                 if len(row) != schema_length:
                     raise ValueError("Length of the row (%s) does not match the schema length (%s)." % (len(row), len(schema)))
-
                 for index, column in enumerate(schema):
                     data_type = column[1]
                     try:
-                        data.append(dtypes.dtypes.cast(row[index], data_type))
+                        if row[index] is not None:
+                            data.append(dtypes.dtypes.cast(row[index], data_type))
                     except:
                         data.append(None)
                         accumulator += 1
                 return data
+
             validated_rdd = pyrdd.map(lambda row: validate_schema(row, num_bad_values))
-            logger.debug("Found %s bad values when validating data against the schema." % num_bad_values.value)
-            return validated_rdd
+
+            # Force rdd to load, so that we can get a bad value count
+            validated_rdd.count()
+
+            return SchemaValidationReturn(validated_rdd, num_bad_values.value)
         else:
             raise TypeError("Unable to validate schema, because the pyrdd provided is not an RDD.")
 
@@ -312,3 +320,28 @@ class Frame(object):
     from sparktk.frame.ops.tally_percent import tally_percent
     from sparktk.frame.ops.topk import top_k
     from sparktk.frame.ops.unflatten_columns import unflatten_columns
+
+
+class SchemaValidationReturn(PropertiesObject):
+    """
+    Return value from schema validation that includes the rdd of validated values and the number of bad values
+    that were found.
+    """
+
+    def __init__(self, validated_rdd, bad_value_count):
+        self._validated_rdd = validated_rdd
+        self._bad_value_count = bad_value_count
+
+    @property
+    def validated_rdd(self):
+        """
+        RDD of values that have been casted to the data type specified by the frame's schema.
+        """
+        return self._validated_rdd
+
+    @property
+    def bad_value_count(self):
+        """
+        Number of values that were unable to be parsed to the data type specified by the schema.
+        """
+        return self._bad_value_count

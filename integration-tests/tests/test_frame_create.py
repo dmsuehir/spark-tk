@@ -115,3 +115,25 @@ def test_create_with_schema_validation(tc):
     for item in values[100:len(values)]:
         assert(item == [None])
 
+def test_frame_schema_validation(tc):
+    """
+    Tests explicit schema validation after a frame is created using  validate_pyrdd_schema, and
+    checks the number of bad rows
+    """
+    # test with all integers - schema validation should pass.
+    data = [[i] for i in xrange(0, 100)]
+    frame = tc.frame.create(data)
+    result = frame.validate_pyrdd_schema(frame.rdd, [("a", int)])
+    assert(result.bad_value_count == 0)
+
+    # dataset has a mix of integers and strings - schema validation should fail on the strings.
+    data = [[i] for i in xrange(0,100)] + [["xyz" + str(i)] for i in xrange(0,20)]
+    frame = tc.frame.create(data)
+    result = frame.validate_pyrdd_schema(frame.rdd, [("a", int)])
+    assert(result.bad_value_count == 20)
+
+    # dataset has a mix of integers and strings, but schema specifies a string.  validation should pass.
+    data = [[i] for i in xrange(0,100)] + [["xyz" + str(i)] for i in xrange(0,20)]
+    frame = tc.frame.create(data)
+    result = frame.validate_pyrdd_schema(frame.rdd, [("a", str)])
+    assert(result.bad_value_count == 0)

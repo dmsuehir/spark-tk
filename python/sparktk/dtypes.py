@@ -10,7 +10,8 @@ import numpy as np
 import json
 import re
 from pyspark.sql import types
-
+import logging
+logger = logging.getLogger('sparktk')
 
 # alias numpy types
 # todo: bring back the numpy types
