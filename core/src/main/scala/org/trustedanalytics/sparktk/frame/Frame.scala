@@ -6,7 +6,7 @@ import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.json4s.JsonAST.JValue
-import org.trustedanalytics.sparktk.frame.internal.BaseFrame
+import org.trustedanalytics.sparktk.frame.internal.{ ValidationReport, BaseFrame }
 import org.trustedanalytics.sparktk.frame.internal.ops._
 import org.trustedanalytics.sparktk.frame.internal.ops.binning.{ BinColumnTransformWithResult, HistogramSummarization, QuantileBinColumnTransformWithResult }
 import org.trustedanalytics.sparktk.frame.internal.ops.classificationmetrics.{ MultiClassClassificationMetricsSummarization, BinaryClassificationMetricsSummarization }
@@ -71,26 +71,45 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = f
 
   private val log: Logger = Logger.getLogger(Frame.getClass)
 
-  // Infer the schema, if a schema was not provided
-  val updatedSchema = if (frameSchema == null) {
-    SchemaHelper.inferSchema(frameRdd, 100, None)
+  val validationReport = init(frameRdd, frameSchema, validateSchema)
+
+  /**
+   * Initialize the frame and call schema validation, if it's enabled.
+   *
+   * @param frameRdd RDD
+   * @param frameSchema Schema
+   * @param validateSchema Boolean indicating if schema validation should be performed.
+   * @return ValidationReport
+   */
+  def init(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean): ValidationReport = {
+    var validationReport = ValidationReport(false, None)
+
+    // Infer the schema, if a schema was not provided
+    val updatedSchema = if (frameSchema == null) {
+      SchemaHelper.inferSchema(frameRdd, 100, None)
+    }
+    else
+      frameSchema
+
+    // Validate the data against the schema, if the validateSchema is enabled
+    val updatedRdd = if (validateSchema) {
+      val schemaValidation = super.validateSchema(frameRdd, updatedSchema)
+
+      if (schemaValidation.validationReport.numBadValues.isDefined &&
+        schemaValidation.validationReport.numBadValues.get > 0)
+        log.warn(s"Schema validation found ${schemaValidation.validationReport.numBadValues.get} bad values.")
+
+      validationReport = schemaValidation.validationReport
+      schemaValidation.validatedRdd
+
+    }
+    else
+      frameRdd
+
+    super.init(updatedRdd, updatedSchema)
+
+    validationReport
   }
-  else
-    frameSchema
-
-  // Validate the data against the schema, if the validateSchema is enabled
-  val updatedRdd = if (validateSchema) {
-    val schemaValidation = validateSchema(frameRdd, updatedSchema)
-
-    if (schemaValidation.validationReport.numBadValues > 0)
-      log.warn(s"Schema validation found ${schemaValidation.validationReport.numBadValues} bad values.")
-
-    schemaValidation.validatedRdd
-  }
-  else
-    frameRdd
-
-  init(updatedRdd, updatedSchema)
 
   /**
    * (typically called from pyspark, with jrdd)

@@ -51,7 +51,10 @@ trait BaseFrame {
       Row.fromSeq(parsedValues)
     })
 
-    SchemaValidationReturn(validatedRdd, ValidationReport(badValueCount.value))
+    // Call count() to force rdd map to execute so that we can get the badValueCount from the accumulator.
+    validatedRdd.count()
+
+    SchemaValidationReturn(validatedRdd, ValidationReport(true, Some(badValueCount.value)))
   }
 
   protected def init(rdd: RDD[Row], schema: Schema): Unit = {
@@ -76,9 +79,11 @@ trait BaseFrame {
 /**
  * Validation report for schema and rdd validation.
  *
- * @param numBadValues Number of values that were unable to be parsed to the column's data type.
+ * @param validationPerformed Boolean indicating if validation has been performed
+ * @param numBadValues If validation was performed, the number of values that were unable to be parsed
+ *                     to the column's data type.  None if validation was not performed.
  */
-case class ValidationReport(numBadValues: Int)
+case class ValidationReport(validationPerformed: Boolean, numBadValues: Option[Int])
 
 /**
  * Value to return from the function that validates the data against schema.
