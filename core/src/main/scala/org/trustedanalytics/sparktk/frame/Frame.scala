@@ -79,10 +79,10 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = f
    * @param frameRdd RDD
    * @param frameSchema Schema
    * @param validateSchema Boolean indicating if schema validation should be performed.
-   * @return ValidationReport
+   * @return ValidationReport, if the data is validated against the schema.
    */
-  def init(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean): ValidationReport = {
-    var validationReport = ValidationReport(false, None)
+  def init(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean): Option[ValidationReport] = {
+    var validationReport: Option[ValidationReport] = None
 
     // Infer the schema, if a schema was not provided
     val updatedSchema = if (frameSchema == null) {
@@ -95,11 +95,10 @@ class Frame(frameRdd: RDD[Row], frameSchema: Schema, validateSchema: Boolean = f
     val updatedRdd = if (validateSchema) {
       val schemaValidation = super.validateSchema(frameRdd, updatedSchema)
 
-      if (schemaValidation.validationReport.numBadValues.isDefined &&
-        schemaValidation.validationReport.numBadValues.get > 0)
-        log.warn(s"Schema validation found ${schemaValidation.validationReport.numBadValues.get} bad values.")
+      if (schemaValidation.validationReport.numBadValues > 0)
+        log.warn(s"Schema validation found ${schemaValidation.validationReport.numBadValues} bad values.")
 
-      validationReport = schemaValidation.validationReport
+      validationReport = Some(schemaValidation.validationReport)
       schemaValidation.validatedRdd
 
     }

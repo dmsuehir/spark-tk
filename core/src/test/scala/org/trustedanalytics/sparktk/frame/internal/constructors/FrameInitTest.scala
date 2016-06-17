@@ -105,9 +105,8 @@ class FrameInitTest extends TestingSparkContextWordSpec {
       val data = frame.take(frame.rowCount.toInt)
       // check for missing values
       data.slice(100, data.length).foreach(r => assert(r.get(0) == null))
-      assert(frame.validationReport.validationPerformed == true)
-      assert(frame.validationReport.numBadValues.isDefined == true)
-      assert(20 == frame.validationReport.numBadValues.get)
+      assert(frame.validationReport.isDefined == true)
+      assert(20 == frame.validationReport.get.numBadValues)
     }
 
     "no exception if data past the first 100 rows does not match the schema, if validation is disabled" in {
@@ -118,8 +117,7 @@ class FrameInitTest extends TestingSparkContextWordSpec {
 
       val frame = new Frame(rdd, null, validateSchema = false)
       assert(frame.take(frame.rowCount.toInt).length == frame.rowCount)
-      assert(frame.validationReport.validationPerformed == false)
-      assert(frame.validationReport.numBadValues.isDefined == false)
+      assert(frame.validationReport.isDefined == false)
     }
   }
 }
