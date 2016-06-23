@@ -125,7 +125,8 @@ _pyspark_type_to_primitive_type_table = {
     types.IntegerType : int,
     types.DoubleType : float,
     types.DecimalType : float,
-    types.StringType : str
+    types.StringType : str,
+    types.TimestampType : datetime
 }
 
 # map data type to pyspark sql type

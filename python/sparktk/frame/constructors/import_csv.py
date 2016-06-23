@@ -93,10 +93,7 @@ def import_csv(path, delimiter=",", header=False, inferschema=True, schema=None,
     if schema is None:
         for column in df.schema.fields:
             try:
-                if type(column.dataType) == TimestampType:
-                    datatype = dtypes.datetime
-                else:
-                    datatype = dtypes.dtypes.get_primitive_type_from_pyspark_type(type(column.dataType))
+                datatype = dtypes.dtypes.get_primitive_type_from_pyspark_type(type(column.dataType))
             except ValueError:
                 raise TypeError("Unsupported data type ({0}) for column {1}.".format(str(column.dataType), column.name))
             df_schema.append((column.name, datatype))
@@ -122,7 +119,7 @@ def import_csv(path, delimiter=",", header=False, inferschema=True, schema=None,
 
     rdd = df.rdd
 
-    if not all(c[1] != dtypes.datetime for c in df_schema):
+    if any(c[1] == dtypes.datetime for c in df_schema):
         # If any columns are date/time we must do this map
         rdd = df.rdd.map(cast_datetime)
 
