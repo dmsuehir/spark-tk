@@ -2,7 +2,6 @@ from collections import namedtuple
 
 import sparktk.frame.schema
 from sparktk.dtypes import dtypes
-import datetime
 
 TakeResult = namedtuple("TakeResult", ['data', 'schema'])
 
