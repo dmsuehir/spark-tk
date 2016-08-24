@@ -60,4 +60,34 @@ class DataTypesTest extends TestingSparkContextWordSpec with Matchers {
       assert(DataTypes.datetime.parse(List(1, 2, 3)).isFailure)
     }
   }
+
+  "convertToType" should {
+    "support int32" in {
+      assert(12 == DataTypes.convertToType(12, DataTypes.int32))
+      assert(12 == DataTypes.convertToType("12", DataTypes.int32))
+      assert(12 == DataTypes.convertToType(12.0, DataTypes.int32))
+      intercept[NumberFormatException] {
+        // String that can't be parsed as an integer
+        DataTypes.convertToType("bogus", DataTypes.int32)
+      }
+      intercept[RuntimeException] {
+        // Invalid value (a list) should throw an exception when trying to convert to an int32
+        DataTypes.convertToType(List(1, 2, 3), DataTypes.int32)
+      }
+    }
+
+    "support float32" in {
+      assert(12.0 == DataTypes.convertToType(12, DataTypes.float32))
+      assert(12.75 == DataTypes.convertToType("12.75", DataTypes.float32))
+      assert(12.75 == DataTypes.convertToType(12.75, DataTypes.float32))
+      intercept[NumberFormatException] {
+        // String that can't be parsed as an float
+        DataTypes.convertToType("bogus", DataTypes.float32)
+      }
+      intercept[RuntimeException] {
+        // Invalid value (a list) should throw an exception when trying to convert to an float32
+        DataTypes.convertToType(List(1, 2, 3), DataTypes.float32)
+      }
+    }
+  }
 }
