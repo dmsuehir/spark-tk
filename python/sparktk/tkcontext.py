@@ -120,7 +120,6 @@ class TkContext(object):
             # if it's not from of the other libraries, then raise an error
             if relevant_path == "":
                 raise ValueError("Trouble with class name %s, %s" % ('.'.join(name_parts), str(e)))
-        print(relevant_path)
         cmd = "tc.%s._from_scala(tc, scala_obj)" % relevant_path
         logger.debug("tkcontext._create_python_proxy cmd=%s", cmd)
         proxy = eval(cmd, {"tc": self, "scala_obj": scala_obj})

@@ -24,6 +24,7 @@ object Loaders {
     val result = TkSaveLoad.loadTk(sc, path)
     val loaderOption = loaders.get(result.formatId)
 
+    // Function that other libraries for the specified loader, if the format was not a spark-tk format
     def getOtherLoader(formatId: String): LoaderType = {
       var registeredLoaders = ""
       if (otherLoaders.isDefined) {
@@ -40,7 +41,6 @@ object Loaders {
 
     val loader = loaders.getOrElse(result.formatId, getOtherLoader(result.formatId))
 
-    //val loader = loaders.getOrElse(result.formatId, throw new RuntimeException(s"Could not find a registered loader for '${result.formatId}' stored at $path.\nRegistered loaders include: ${loaders.keys.mkString("\n")}"))
     loader(sc, path, result.formatVersion, result.data)
   }
 
