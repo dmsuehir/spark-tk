@@ -1,0 +1,1 @@
+{"id":"Bogus","version":1,"data":{"trainingObservationColumns":["data"],"trainingLabelColumn":"predicted_cluster","k":2,"centroids":[[3.6666666666666665],[120.0]],"clusters":["Cluster:0","Cluster:1"],"clusterSize":[9,1]}}
