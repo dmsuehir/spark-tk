@@ -31,9 +31,8 @@ def import_csv(path, delimiter=",", header=False, infer_schema=True, schema=None
     Load a frame from a csv file by specifying the path to the file, delimiter, and options that specify that
     there is a header and to infer the schema based on the data.
 
-        <skip>
 
-        >>> file_path = "../integration-tests/datasets/cities.csv"
+        >>> file_path = "../datasets/cities.csv"
 
         >>> frame = tc.frame.import_csv(file_path, "|", header=True, infer_schema=True)
         -etc-
@@ -53,15 +52,8 @@ def import_csv(path, delimiter=",", header=False, infer_schema=True, schema=None
         [9]    18  Redmond                27427            26215  4.62%   Deschutes
 
         >>> frame.schema
-        [('rank', int),
-         ('city', str),
-         ('population_2013', int),
-         ('population_2010', int),
-         ('change', str),
-         ('county', str)]
-
-        </skip>
-    """
+        [('rank', <type 'int'>), ('city', <type 'str'>), ('population_2013', <type 'int'>), ('population_2010', <type 'int'>), ('change', <type 'str'>), ('county', <type 'str'>)]
+  """
 
 
     if schema is not None:
